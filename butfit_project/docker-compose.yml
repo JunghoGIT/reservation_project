@@ -1,0 +1,30 @@
+version: "3"
+services:
+    nginx:
+        image: nginx
+        container_name: ng01
+        ports:
+            - "80:80"
+        volumes:
+            - ./ButFit:/ButFit
+            - ./config/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+            - /static:/static
+        depends_on:
+            - web
+    web:
+        build: .
+        container_name: dg01
+        command: bash -c "
+            python3 manage.py makemigrations &&
+            python3 manage.py migrate &&
+            python3 manage.py collectstatic --no-input &&
+            python3 manage.py makemigrations butfit --no-input &&
+            python3 manage.py migrate butfit &&
+            python3 manage.py makemigrations accounts --no-input &&
+            python3 manage.py migrate accounts &&
+            gunicorn config.wsgi:application -b 0:80"
+        working_dir: /ButFit/
+        volumes:
+            - ./ButFit:/ButFit
+            - /static:/static
+
